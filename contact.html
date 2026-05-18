@@ -235,7 +235,7 @@
 
           <div class="form-group">
             <label>Topic <span class="req">*</span></label>
-            <select id="fsubject">
+            <select id="fsubject" onchange="toggleOtherReason()">
               <option value="">— Select a topic —</option>
               <option value="Project Collaboration">Project Collaboration</option>
               <option value="Security Consultation">Security Consultation</option>
@@ -246,6 +246,12 @@
               <option value="Other">Other</option>
             </select>
             <div class="field-error" id="fsubject-err">Please select a topic.</div>
+          </div>
+
+          <div class="form-group" id="otherReasonGroup" style="display:none;animation:fadeIn .3s ease;">
+            <label>Reason <span class="req">*</span></label>
+            <input type="text" id="fotherReason" placeholder="Please specify your reason..." autocomplete="off"/>
+            <div class="field-error" id="fotherReason-err">Please specify your reason.</div>
           </div>
 
           <div class="form-group">
@@ -310,6 +316,17 @@
     document.getElementById(errId).style.display=show?'block':'none';
   }
 
+  function toggleOtherReason(){
+    const subject=document.getElementById('fsubject').value;
+    const group=document.getElementById('otherReasonGroup');
+    group.style.display = subject==='Other' ? 'flex' : 'none';
+    if(subject!=='Other'){
+      document.getElementById('fotherReason').value='';
+      document.getElementById('fotherReason').classList.remove('invalid');
+      document.getElementById('fotherReason-err').style.display='none';
+    }
+  }
+
   function validate(){
     const name=document.getElementById('fname').value.trim();
     const email=document.getElementById('femail').value.trim();
@@ -320,6 +337,13 @@
     setError('fname','fname-err',!name); if(!name)ok=false;
     setError('femail','femail-err',!rx.test(email)); if(!rx.test(email))ok=false;
     setError('fsubject','fsubject-err',!subject); if(!subject)ok=false;
+    if(subject==='Other'){
+      const reason=document.getElementById('fotherReason').value.trim();
+      const noReason=!reason;
+      document.getElementById('fotherReason').classList.toggle('invalid',noReason);
+      document.getElementById('fotherReason-err').style.display=noReason?'block':'none';
+      if(noReason)ok=false;
+    }
     setError('fmessage','fmessage-err',msg.length<10); if(msg.length<10)ok=false;
     return ok;
   }
