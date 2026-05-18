@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Projects — Jayanthan Sailentra Karthikeyan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --bg:#050505;--surface:#0d0d0d;--border:#1a1a1a;--accent:#00ff41;--accent3:#00cfff;--text:#cccccc;--muted:#444;--mono:'Share Tech Mono',monospace;--display:'Orbitron',monospace; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--bg);color:var(--text);font-family:var(--mono);overflow-x:hidden;cursor:crosshair;}
+    #matrix-canvas{position:fixed;inset:0;z-index:0;opacity:.05;pointer-events:none;}
+    body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.1) 3px,rgba(0,0,0,.1) 4px);pointer-events:none;z-index:9999;}
+
+    .topnav{position:fixed;top:0;left:0;right:0;z-index:900;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:56px;border-bottom:1px solid var(--border);background:rgba(5,5,5,.95);backdrop-filter:blur(16px);}
+    .topnav-logo{font-family:var(--display);font-weight:900;font-size:.85rem;color:var(--accent);text-decoration:none;letter-spacing:.15em;text-shadow:0 0 12px rgba(0,255,65,.5);}
+    .topnav-right{display:flex;align-items:center;gap:1.5rem;}
+    .topnav-right a{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s;}
+    .topnav-right a:hover,.topnav-right a.active{color:var(--accent);}
+    .topnav-right .msg-btn{border:1px solid rgba(0,255,65,.35);padding:.35rem .85rem;color:var(--accent);}
+    .topnav-right .msg-btn:hover{background:rgba(0,255,65,.07);}
+    .ham-btn{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:crosshair;padding:4px;z-index:1000;}
+    .ham-btn span{display:block;width:22px;height:2px;background:var(--accent);transition:all .3s;}
+    .ham-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+    .ham-btn.open span:nth-child(2){opacity:0;}
+    .ham-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+    .sidebar{position:fixed;top:56px;left:0;bottom:0;width:260px;z-index:800;background:rgba(8,8,8,.97);backdrop-filter:blur(20px);border-right:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-header{padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--border);}
+    .sidebar-greeting{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;}
+    .sidebar-name{font-family:var(--display);font-size:.78rem;font-weight:700;color:#fff;line-height:1.4;}
+    .sidebar-name span{color:var(--accent);}
+    .sidebar-role{font-size:.62rem;color:var(--muted);margin-top:.3rem;}
+    .sidebar-nav{flex:1;padding:1rem 0;overflow-y:auto;}
+    .sidebar-section-label{font-size:.55rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);padding:.75rem 1.5rem .4rem;}
+    .sidebar-link{display:flex;align-items:center;gap:.9rem;padding:.8rem 1.5rem;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;border-left:2px solid transparent;transition:all .2s;}
+    .sidebar-link:hover{color:var(--text);background:rgba(255,255,255,.02);border-left-color:var(--border);}
+    .sidebar-link.active{color:var(--accent);background:rgba(0,255,65,.04);border-left-color:var(--accent);}
+    .sidebar-link .icon{font-size:.9rem;width:18px;text-align:center;}
+    .sidebar-link .badge{margin-left:auto;font-size:.52rem;padding:.15rem .45rem;background:rgba(0,255,65,.12);color:var(--accent);border:1px solid rgba(0,255,65,.2);letter-spacing:.08em;}
+    .sidebar-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);font-size:.6rem;color:var(--muted);display:flex;align-items:center;gap:.5rem;}
+    .sidebar-footer::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 1.5s infinite;flex-shrink:0;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:700;}
+    .overlay.show{display:block;}
+
+    .main{position:relative;z-index:1;}
+    .page-hero{padding:7rem 4rem 3rem;border-bottom:1px solid var(--border);}
+    .breadcrumb{display:flex;align-items:center;gap:.6rem;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;}
+    .breadcrumb a{color:var(--muted);text-decoration:none;transition:color .2s;}
+    .breadcrumb a:hover{color:var(--accent);}
+    .breadcrumb .sep{color:var(--border);}
+    .breadcrumb .cur{color:var(--accent);}
+    .page-title{font-family:var(--display);font-weight:900;font-size:clamp(2rem,5vw,4rem);color:#fff;line-height:1;letter-spacing:.02em;opacity:0;animation:fadeUp .5s ease forwards .1s;}
+    .page-title span{color:var(--accent);}
+    .page-sub{font-size:.78rem;color:var(--muted);margin-top:1rem;line-height:1.8;max-width:520px;opacity:0;animation:fadeUp .5s ease forwards .25s;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+    .content{padding:3.5rem 4rem 5rem;}
+    .projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem;}
+    .project-card{border:1px solid var(--border);background:var(--surface);padding:2rem;position:relative;overflow:hidden;transition:all .3s;}
+    .project-card.featured{border-color:rgba(0,255,65,.35);}
+    .project-card.featured::after{content:'FEATURED';position:absolute;top:1rem;right:1rem;font-size:.52rem;letter-spacing:.2em;color:var(--accent);border:1px solid rgba(0,255,65,.3);padding:.2rem .5rem;}
+    .project-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 8px 40px rgba(0,255,65,.07);}
+    .project-glow{position:absolute;inset:0;background:radial-gradient(circle at top left,rgba(0,255,65,.04),transparent 60%);opacity:0;transition:opacity .3s;}
+    .project-card:hover .project-glow{opacity:1;}
+    .project-id{font-size:.58rem;color:var(--muted);letter-spacing:.2em;margin-bottom:.9rem;}
+    .project-name{font-family:var(--display);font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:.75rem;letter-spacing:.04em;transition:color .2s;}
+    .project-card.featured .project-name{color:var(--accent);text-shadow:0 0 14px rgba(0,255,65,.3);}
+    .project-card:hover .project-name{color:var(--accent);}
+    .project-desc{font-size:.72rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem;}
+    .project-stack{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem;}
+    .stack-tag{font-size:.6rem;padding:.25rem .6rem;background:rgba(0,255,65,.05);border:1px solid rgba(0,255,65,.15);color:var(--accent);letter-spacing:.08em;}
+    .project-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:1rem;}
+    .project-type{font-size:.6rem;color:var(--accent3);letter-spacing:.15em;text-transform:uppercase;}
+    .project-arrow{color:var(--muted);transition:all .3s;}
+    .project-card:hover .project-arrow{color:var(--accent);transform:translateX(4px);}
+
+    footer{border-top:1px solid var(--border);padding:1.75rem 4rem;display:flex;justify-content:space-between;align-items:center;font-size:.62rem;color:var(--muted);flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
+    footer .acc{color:var(--accent);}
+
+    @media(max-width:900px){
+      .topnav-right .hide-mob{display:none;}
+      .ham-btn{display:flex;}
+      .page-hero{padding:7rem 1.5rem 2.5rem;}
+      .content{padding:2.5rem 1.5rem 4rem;}
+      .projects-grid{grid-template-columns:1fr;}
+      footer{padding:1.5rem;flex-direction:column;text-align:center;}
+    }
+  </style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+<nav class="topnav">
+  <a class="topnav-logo" href="index.html">JSK</a>
+  <div class="topnav-right">
+    <a href="projects.html" class="active hide-mob">Projects</a>
+    <a href="tools.html" class="hide-mob">Tools</a>
+    <a href="license.html" class="hide-mob">License</a>
+    <a href="contact.html" class="msg-btn">✉ Message</a>
+    <button class="ham-btn" id="hamBtn" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-greeting">// Navigation</div>
+    <div class="sidebar-name">Jayanthan <span>Sailentra</span><br/>Karthikeyan</div>
+    <div class="sidebar-role">Hacker &amp; Coder</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section-label">Pages</div>
+    <a href="index.html" class="sidebar-link"><span class="icon">⌂</span> Intro</a>
+    <a href="projects.html" class="sidebar-link active"><span class="icon">◈</span> Projects <span class="badge">6</span></a>
+    <a href="tools.html" class="sidebar-link"><span class="icon">⚙</span> Tools <span class="badge">12</span></a>
+    <a href="license.html" class="sidebar-link"><span class="icon">⚖</span> License</a>
+    <a href="contact.html" class="sidebar-link"><span class="icon">✉</span> Send Message</a>
+  </nav>
+  <div class="sidebar-footer">Available for new projects</div>
+</aside>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<main class="main">
+  <div class="page-hero">
+    <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Projects</span></div>
+    <h1 class="page-title">MY <span>PROJECTS</span></h1>
+    <p class="page-sub">Tools and software I've built — from pentest frameworks to OSINT kits. BlackMsf and InstaTool are my flagship works.</p>
+  </div>
+
+  <div class="content">
+    <div class="projects-grid">
+      <a href="blackmsf.html" class="project-card featured" style="text-decoration:none;color:inherit;display:block;">
+        <div class="project-glow"></div>
+        <div class="project-id">PRJ-001</div>
+        <div class="project-name">BlackMsf</div>
+        <div class="project-desc">A powerful Metasploit Framework wrapper with a custom terminal UI, automated exploitation chains, and stealth payload generation. Simplifies complex pentest workflows into single-command operations with enhanced session management.</div>
+        <div class="project-stack"><span class="stack-tag">Python</span><span class="stack-tag">Ruby</span><span class="stack-tag">Metasploit API</span><span class="stack-tag">Bash</span></div>
+        <div class="project-footer"><span class="project-type">Pentest Framework</span><span class="project-arrow">→</span></div>
+      </a>
+      <div class="project-card featured">
+        <div class="project-glow"></div>
+        <div class="project-id">PRJ-002</div>
+        <div class="project-name">InstaTool</div>
+        <div class="project-desc">Multi-purpose Instagram OSINT and security research toolkit. Performs account analysis, follower mapping, metadata extraction, and public social recon via a fast, clean CLI interface built for researchers.</div>
+        <div class="project-stack"><span class="stack-tag">Python</span><span class="stack-tag">Requests</span><span class="stack-tag">OSINT</span><span class="stack-tag">BeautifulSoup</span></div>
+        <div class="project-footer"><span class="project-type">OSINT / Social Research</span><span class="project-arrow">→</span></div>
+      </div>
+      <a href="netphantom.html" class="project-card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="project-glow"></div>
+        <div class="project-id">PRJ-003</div>
+        <div class="project-name">NetPhantom</div>
+        <div class="project-desc">Stealthy automated network recon tool combining Nmap, OS fingerprinting, and banner grabbing into a single pipeline with structured JSON and HTML report output.</div>
+        <div class="project-stack"><span class="stack-tag">Python</span><span class="stack-tag">Nmap API</span><span class="stack-tag">Sockets</span></div>
+        <div class="project-footer"><span class="project-type">Network Recon</span><span class="project-arrow">→</span></div>
+      </a>
+      <a href="cipherx.html" class="project-card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="project-glow"></div>
+        <div class="project-id">PRJ-004</div>
+        <div class="project-name">CipherX</div>
+        <div class="project-desc">Terminal-based encrypted file and message vault using AES-256-GCM with Argon2 key derivation. Zero cloud dependency — all data stays local with a dead-simple CLI.</div>
+        <div class="project-stack"><span class="stack-tag">Python</span><span class="stack-tag">AES-256</span><span class="stack-tag">Cryptography</span></div>
+        <div class="project-footer"><span class="project-type">Encryption Tool</span><span class="project-arrow">→</span></div>
+      </a>
+      <a href="ghostscan.html" class="project-card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="project-glow"></div>
+        <div class="project-id">PRJ-005</div>
+        <div class="project-name">GhostScan</div>
+        <div class="project-desc">Automated web vulnerability scanner targeting XSS, open redirects, and server misconfigurations. Features customizable payloads and a severity-graded HTML report generator.</div>
+        <div class="project-stack"><span class="stack-tag">Python</span><span class="stack-tag">Requests</span><span class="stack-tag">BeautifulSoup</span></div>
+        <div class="project-footer"><span class="project-type">Web Security Scanner</span><span class="project-arrow">→</span></div>
+      </a>
+      <a href="subenum.html" class="project-card" style="text-decoration:none;color:inherit;display:block;">
+        <div class="project-glow"></div>
+        <div class="project-id">PRJ-006</div>
+        <div class="project-name">SubEnum Pro</div>
+        <div class="project-desc">Fast multi-threaded subdomain enumerator combining wordlist brute-forcing, DNS resolution, and certificate transparency log parsing for thorough attack surface mapping.</div>
+        <div class="project-stack"><span class="stack-tag">Python</span><span class="stack-tag">DNS</span><span class="stack-tag">Threading</span><span class="stack-tag">API</span></div>
+        <div class="project-footer"><span class="project-type">Recon Tool</span><span class="project-arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    <span>© 2026 <span class="acc">Jayanthan Sailentra Karthikeyan</span>. All rights reserved.</span>
+    <span>Coded with curiosity. <span class="acc">// Stay sharp.</span></span>
+  </footer>
+</main>
+
+<script>
+  const canvas=document.getElementById('matrix-canvas'),ctx=canvas.getContext('2d');
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  const chars='アイウエオABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&';
+  const fs=13;let drops=[];
+  function initD(){drops=Array(Math.floor(canvas.width/fs)).fill(1);}
+  initD();window.addEventListener('resize',initD);
+  function draw(){ctx.fillStyle='rgba(5,5,5,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#00ff41';ctx.font=fs+'px Share Tech Mono';for(let i=0;i<drops.length;i++){ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,drops[i]*fs);if(drops[i]*fs>canvas.height&&Math.random()>.975)drops[i]=0;drops[i]++;}}
+  setInterval(draw,50);
+  const sidebar=document.getElementById('sidebar'),overlay=document.getElementById('overlay'),hamBtn=document.getElementById('hamBtn');
+  function toggleSidebar(){const o=sidebar.classList.toggle('open');overlay.classList.toggle('show',o);hamBtn.classList.toggle('open',o);document.body.style.overflow=o?'hidden':'';}
+</script>
+</body>
+</html>

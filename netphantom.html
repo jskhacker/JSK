@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NetPhantom — Jayanthan Sailentra Karthikeyan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--bg:#050505;--surface:#0d0d0d;--border:#1a1a1a;--accent:#00ff41;--accent3:#00cfff;--red:#ff3c5e;--text:#cccccc;--muted:#444;--mono:'Share Tech Mono',monospace;--display:'Orbitron',monospace;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--bg);color:var(--text);font-family:var(--mono);overflow-x:hidden;cursor:crosshair;}
+    #matrix-canvas{position:fixed;inset:0;z-index:0;opacity:.05;pointer-events:none;}
+    body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.1) 3px,rgba(0,0,0,.1) 4px);pointer-events:none;z-index:9999;}
+    .topnav{position:fixed;top:0;left:0;right:0;z-index:900;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:56px;border-bottom:1px solid var(--border);background:rgba(5,5,5,.95);backdrop-filter:blur(16px);}
+    .topnav-logo{font-family:var(--display);font-weight:900;font-size:.85rem;color:var(--accent);text-decoration:none;letter-spacing:.15em;text-shadow:0 0 12px rgba(0,255,65,.5);}
+    .topnav-right{display:flex;align-items:center;gap:1.5rem;}
+    .topnav-right a{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s;}
+    .topnav-right a:hover{color:var(--accent);}
+    .topnav-right .msg-btn{border:1px solid rgba(0,255,65,.35);padding:.35rem .85rem;color:var(--accent);}
+    .ham-btn{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:crosshair;padding:4px;}
+    .ham-btn span{display:block;width:22px;height:2px;background:var(--accent);transition:all .3s;}
+    .ham-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+    .ham-btn.open span:nth-child(2){opacity:0;}
+    .ham-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+    .sidebar{position:fixed;top:56px;left:0;bottom:0;width:260px;z-index:800;background:rgba(8,8,8,.97);backdrop-filter:blur(20px);border-right:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-header{padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--border);}
+    .sidebar-greeting{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;}
+    .sidebar-name{font-family:var(--display);font-size:.78rem;font-weight:700;color:#fff;line-height:1.4;}
+    .sidebar-name span{color:var(--accent);}
+    .sidebar-role{font-size:.62rem;color:var(--muted);margin-top:.3rem;}
+    .sidebar-nav{flex:1;padding:1rem 0;overflow-y:auto;}
+    .sidebar-section-label{font-size:.55rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);padding:.75rem 1.5rem .4rem;}
+    .sidebar-link{display:flex;align-items:center;gap:.9rem;padding:.8rem 1.5rem;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;border-left:2px solid transparent;transition:all .2s;}
+    .sidebar-link:hover{color:var(--text);background:rgba(255,255,255,.02);border-left-color:var(--border);}
+    .sidebar-link.active{color:var(--accent);background:rgba(0,255,65,.04);border-left-color:var(--accent);}
+    .sidebar-link .icon{font-size:.9rem;width:18px;text-align:center;}
+    .sidebar-link .badge{margin-left:auto;font-size:.52rem;padding:.15rem .45rem;background:rgba(0,255,65,.12);color:var(--accent);border:1px solid rgba(0,255,65,.2);}
+    .sidebar-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);font-size:.6rem;color:var(--muted);display:flex;align-items:center;gap:.5rem;}
+    .sidebar-footer::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 1.5s infinite;flex-shrink:0;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:700;}
+    .overlay.show{display:block;}
+    .main{position:relative;z-index:1;}
+    .project-hero{padding:7rem 4rem 4rem;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+    .project-hero-glow{position:absolute;top:0;right:0;width:500px;height:500px;background:radial-gradient(circle,rgba(0,207,255,.05) 0%,transparent 70%);pointer-events:none;}
+    .breadcrumb{display:flex;align-items:center;gap:.6rem;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;}
+    .breadcrumb a{color:var(--muted);text-decoration:none;transition:color .2s;}
+    .breadcrumb a:hover{color:var(--accent);}
+    .breadcrumb .sep{color:var(--border);}
+    .breadcrumb .cur{color:var(--accent);}
+    .project-meta-row{display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap;}
+    .project-id-badge{font-size:.6rem;letter-spacing:.2em;color:var(--muted);border:1px solid var(--border);padding:.3rem .7rem;}
+    .project-status{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;padding:.3rem .7rem;border:1px solid rgba(0,255,65,.3);color:var(--accent);background:rgba(0,255,65,.05);}
+    .project-type-badge{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;padding:.3rem .7rem;border:1px solid rgba(0,207,255,.3);color:var(--accent3);background:rgba(0,207,255,.05);}
+    .project-title{font-family:var(--display);font-weight:900;font-size:clamp(3rem,9vw,7rem);color:#fff;line-height:.95;letter-spacing:-.01em;text-shadow:0 0 60px rgba(0,207,255,.1);opacity:0;animation:fadeUp .5s ease forwards .1s;margin-bottom:1.25rem;}
+    .project-title .acc{color:var(--accent3);text-shadow:0 0 30px rgba(0,207,255,.4);}
+    .project-tagline{font-size:clamp(.75rem,1.5vw,1rem);letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:2rem;opacity:0;animation:fadeUp .5s ease forwards .25s;}
+    .project-tagline::before{content:'> ';}
+    .hero-stack{display:flex;gap:.5rem;flex-wrap:wrap;opacity:0;animation:fadeUp .5s ease forwards .4s;}
+    .stack-chip{font-size:.62rem;padding:.35rem .8rem;border:1px solid rgba(0,207,255,.2);color:var(--accent3);background:rgba(0,207,255,.04);letter-spacing:.1em;text-transform:uppercase;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    .content{padding:4rem;display:grid;grid-template-columns:1fr 380px;gap:3rem;align-items:start;}
+    .left-col{display:flex;flex-direction:column;gap:2.5rem;}
+    .info-section{border:1px solid var(--border);background:var(--surface);overflow:hidden;}
+    .info-section-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:#080808;display:flex;align-items:center;gap:.75rem;}
+    .info-section-icon{font-size:1rem;}
+    .info-section-title{font-family:var(--display);font-size:.75rem;font-weight:700;color:#fff;letter-spacing:.06em;}
+    .info-section-body{padding:1.75rem;}
+    .info-section-body p{font-size:.76rem;color:var(--muted);line-height:1.95;margin-bottom:1rem;}
+    .info-section-body p:last-child{margin-bottom:0;}
+    .info-section-body strong{color:var(--text);}
+    .info-section-body .acc{color:var(--accent);}
+    .info-section-body .blu{color:var(--accent3);}
+    .warning-box{border:1px solid rgba(255,60,94,.3);background:rgba(255,60,94,.04);padding:1.25rem 1.5rem;display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.5rem;}
+    .warning-icon{font-size:1.1rem;flex-shrink:0;}
+    .warning-text{font-size:.7rem;color:#ff8099;line-height:1.8;}
+    .warning-text strong{color:var(--red);}
+    .feature-list{list-style:none;display:flex;flex-direction:column;gap:.5rem;}
+    .feature-list li{font-size:.73rem;color:var(--muted);line-height:1.7;padding:.65rem 1rem;border-left:2px solid var(--border);background:rgba(255,255,255,.01);display:flex;gap:.75rem;align-items:flex-start;transition:border-color .2s;}
+    .feature-list li:hover{border-left-color:var(--accent3);}
+    .feature-list li .fi{color:var(--accent3);flex-shrink:0;}
+    .tech-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);}
+    .tech-item{background:var(--surface);padding:1.25rem;transition:background .2s;}
+    .tech-item:hover{background:#111;}
+    .tech-name{font-family:var(--display);font-size:.72rem;font-weight:700;color:#fff;margin-bottom:.35rem;letter-spacing:.04em;}
+    .tech-role{font-size:.62rem;color:var(--muted);line-height:1.5;}
+    .use-cases{display:flex;flex-direction:column;gap:.6rem;}
+    .use-case{padding:1rem 1.25rem;border:1px solid var(--border);background:rgba(0,207,255,.03);display:flex;gap:.85rem;align-items:center;transition:border-color .2s;}
+    .use-case:hover{border-color:rgba(0,207,255,.3);}
+    .use-case-icon{font-size:1rem;color:var(--accent3);}
+    .use-case-text{font-size:.72rem;color:var(--muted);line-height:1.6;}
+    .use-case-text strong{color:var(--text);}
+    .right-col{position:sticky;top:76px;display:flex;flex-direction:column;gap:1.5rem;}
+    .request-card{border:1px solid rgba(0,207,255,.2);background:var(--surface);}
+    .request-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);background:#080808;}
+    .request-header-tag{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent3);margin-bottom:.4rem;}
+    .request-header h3{font-family:var(--display);font-size:.9rem;font-weight:700;color:#fff;letter-spacing:.04em;}
+    .request-body{padding:1.5rem;display:flex;flex-direction:column;gap:1.1rem;}
+    .form-group{display:flex;flex-direction:column;gap:.4rem;}
+    label{font-size:.57rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:.3rem;}
+    label .req{color:var(--accent);}
+    input,textarea,select{font-family:var(--mono);font-size:.72rem;color:var(--text);background:var(--bg);border:1px solid var(--border);padding:.75rem .9rem;width:100%;outline:none;transition:border-color .25s;resize:none;cursor:crosshair;-webkit-appearance:none;appearance:none;}
+    input::placeholder,textarea::placeholder{color:var(--muted);}
+    input:focus,textarea:focus,select:focus{border-color:var(--accent3);box-shadow:0 0 0 2px rgba(0,207,255,.06);}
+    select option{background:#0d0d0d;color:var(--text);}
+    textarea{min-height:90px;line-height:1.7;}
+    .field-error{font-size:.57rem;color:#ff4466;display:none;margin-top:.1rem;}
+    input.invalid,textarea.invalid,select.invalid{border-color:#ff4466!important;}
+    .btn-request{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;padding:.85rem 1.5rem;border:1px solid var(--accent3);background:var(--accent3);color:#000;font-weight:bold;cursor:crosshair;transition:all .25s;width:100%;display:flex;align-items:center;justify-content:center;gap:.5rem;}
+    .btn-request:hover{background:transparent;color:var(--accent3);box-shadow:0 0 20px rgba(0,207,255,.2);}
+    .btn-request:disabled{opacity:.5;cursor:not-allowed;}
+    .request-note{font-size:.6rem;color:var(--muted);line-height:1.7;text-align:center;padding:.75rem;border-top:1px solid var(--border);}
+    .request-note span{color:var(--accent3);}
+    .success-panel{display:none;flex-direction:column;align-items:center;text-align:center;gap:1rem;padding:2.5rem 1.5rem;}
+    .success-panel.show{display:flex;}
+    .request-body.hide{display:none;}
+    .success-icon{width:52px;height:52px;border:2px solid var(--accent3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--accent3);animation:scaleIn .4s ease;}
+    @keyframes scaleIn{from{transform:scale(0)}to{transform:scale(1)}}
+    .success-panel h4{font-family:var(--display);font-size:.85rem;font-weight:700;color:var(--accent3);letter-spacing:.04em;}
+    .success-panel p{font-size:.68rem;color:var(--muted);line-height:1.8;}
+    .btn-again{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:.6rem 1.2rem;border:1px solid rgba(0,207,255,.25);background:transparent;color:var(--accent3);cursor:crosshair;transition:all .2s;margin-top:.25rem;}
+    .btn-again:hover{background:rgba(0,207,255,.06);}
+    .sidebar-info-card{border:1px solid var(--border);background:var(--surface);}
+    .sic-row{display:flex;padding:.9rem 1.25rem;border-bottom:1px solid var(--border);gap:.75rem;align-items:flex-start;}
+    .sic-row:last-child{border-bottom:none;}
+    .sic-key{font-size:.57rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);min-width:75px;flex-shrink:0;}
+    .sic-val{font-size:.68rem;color:var(--text);line-height:1.5;}
+    .sic-val.green{color:var(--accent);}
+    .sic-val.blue{color:var(--accent3);}
+    footer{border-top:1px solid var(--border);padding:1.75rem 4rem;display:flex;justify-content:space-between;align-items:center;font-size:.62rem;color:var(--muted);flex-wrap:wrap;gap:1rem;position:relative;z-index:1;}
+    footer .acc{color:var(--accent);}
+    @media(max-width:1100px){.content{grid-template-columns:1fr;}.right-col{position:static;}}
+    @media(max-width:768px){.topnav-right .hide-mob{display:none;}.ham-btn{display:flex;}.project-hero{padding:7rem 1.5rem 3rem;}.content{padding:2rem 1.5rem 4rem;}.tech-grid{grid-template-columns:1fr;}footer{padding:1.5rem;flex-direction:column;text-align:center;}}
+  </style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+<nav class="topnav">
+  <a class="topnav-logo" href="index.html">JSK</a>
+  <div class="topnav-right">
+    <a href="projects.html" class="hide-mob">Projects</a>
+    <a href="tools.html" class="hide-mob">Tools</a>
+    <a href="license.html" class="hide-mob">License</a>
+    <a href="contact.html" class="msg-btn">✉ Message</a>
+    <button class="ham-btn" id="hamBtn" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-greeting">// Navigation</div>
+    <div class="sidebar-name">Jayanthan <span>Sailentra</span><br/>Karthikeyan</div>
+    <div class="sidebar-role">Hacker &amp; Coder</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section-label">Pages</div>
+    <a href="index.html" class="sidebar-link"><span class="icon">⌂</span> Intro</a>
+    <a href="projects.html" class="sidebar-link active"><span class="icon">◈</span> Projects <span class="badge">6</span></a>
+    <a href="tools.html" class="sidebar-link"><span class="icon">⚙</span> Tools <span class="badge">12</span></a>
+    <a href="license.html" class="sidebar-link"><span class="icon">⚖</span> License</a>
+    <a href="contact.html" class="sidebar-link"><span class="icon">✉</span> Send Message</a>
+  </nav>
+  <div class="sidebar-footer">Available for new projects</div>
+</aside>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<main class="main">
+  <div class="project-hero">
+    <div class="project-hero-glow"></div>
+    <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="projects.html">Projects</a><span class="sep">/</span><span class="cur">NetPhantom</span></div>
+    <div class="project-meta-row">
+      <span class="project-id-badge">PRJ-003</span>
+      <span class="project-status">● Active</span>
+      <span class="project-type-badge">Network Recon</span>
+    </div>
+    <h1 class="project-title">Net<span class="acc">Phantom</span></h1>
+    <p class="project-tagline">Stealthy Automated Network Reconnaissance Tool</p>
+    <div class="hero-stack">
+      <span class="stack-chip">Python</span><span class="stack-chip">Nmap API</span><span class="stack-chip">Sockets</span><span class="stack-chip">Threading</span><span class="stack-chip">Linux</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="left-col">
+      <div class="info-section">
+        <div class="info-section-header"><span class="info-section-icon">◈</span><span class="info-section-title">ABOUT NETPHANTOM</span></div>
+        <div class="info-section-body">
+          <div class="warning-box"><span class="warning-icon">⚠</span><div class="warning-text"><strong>Authorized Use Only.</strong> NetPhantom is strictly for use on networks and systems you own or have explicit written permission to test. Unauthorized scanning is illegal.</div></div>
+          <p><span class="acc">NetPhantom</span> is a stealthy, fully automated network reconnaissance framework built for authorized penetration testers and security researchers. It combines the power of Nmap with custom socket-level probing to deliver comprehensive target intelligence in a single automated pipeline.</p>
+          <p>Rather than manually running individual scans and piecing together results, NetPhantom chains <strong>port scanning, OS fingerprinting, service enumeration, and banner grabbing</strong> into one seamless workflow — then outputs structured, professional-grade reports.</p>
+          <p>Designed for <strong>speed and stealth</strong>, NetPhantom uses timing controls and scan fragmentation techniques to minimize noise during authorized assessments, making it ideal for realistic red team engagements.</p>
+        </div>
+      </div>
+      <div class="info-section">
+        <div class="info-section-header"><span class="info-section-icon">⚡</span><span class="info-section-title">KEY FEATURES</span></div>
+        <div class="info-section-body">
+          <ul class="feature-list">
+            <li><span class="fi">▸</span> Automated pipeline: port scan → OS detection → service enum → banner grab in one command.</li>
+            <li><span class="fi">▸</span> Full Nmap API integration with custom scan profiles (SYN, TCP, UDP, stealth).</li>
+            <li><span class="fi">▸</span> Multi-threaded scanning engine for fast coverage across large authorized target ranges.</li>
+            <li><span class="fi">▸</span> OS fingerprinting using TCP/IP stack analysis and TTL heuristics.</li>
+            <li><span class="fi">▸</span> Service version detection across 1000+ known ports and protocols.</li>
+            <li><span class="fi">▸</span> Banner grabbing via raw sockets for custom and non-standard services.</li>
+            <li><span class="fi">▸</span> Structured output in JSON and polished HTML reports for professional documentation.</li>
+            <li><span class="fi">▸</span> Verbose and silent modes — full logs or minimal output based on your preference.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="info-section">
+        <div class="info-section-header"><span class="info-section-icon">⚙</span><span class="info-section-title">TECH STACK</span></div>
+        <div class="info-section-body" style="padding:0;">
+          <div class="tech-grid">
+            <div class="tech-item"><div class="tech-name">Python 3</div><div class="tech-role">Core engine, CLI, orchestration, and report generation.</div></div>
+            <div class="tech-item"><div class="tech-name">Nmap / python-nmap</div><div class="tech-role">Port scanning, service detection, and OS fingerprinting.</div></div>
+            <div class="tech-item"><div class="tech-name">Raw Sockets</div><div class="tech-role">Custom banner grabbing and low-level protocol probing.</div></div>
+            <div class="tech-item"><div class="tech-name">Threading</div><div class="tech-role">Concurrent scanning for fast authorized target coverage.</div></div>
+            <div class="tech-item"><div class="tech-name">JSON</div><div class="tech-role">Structured machine-readable output for pipeline integration.</div></div>
+            <div class="tech-item"><div class="tech-name">HTML Reports</div><div class="tech-role">Professional pentest report generation for client deliverables.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="info-section">
+        <div class="info-section-header"><span class="info-section-icon">✓</span><span class="info-section-title">AUTHORIZED USE CASES</span></div>
+        <div class="info-section-body">
+          <div class="use-cases">
+            <div class="use-case"><span class="use-case-icon">🔬</span><div class="use-case-text"><strong>Home Lab Recon</strong> — Map your own virtual network infrastructure for learning and testing.</div></div>
+            <div class="use-case"><span class="use-case-icon">📋</span><div class="use-case-text"><strong>Authorized Pentests</strong> — Perform network discovery on client infrastructure with written permission.</div></div>
+            <div class="use-case"><span class="use-case-icon">🏆</span><div class="use-case-text"><strong>CTF Challenges</strong> — Rapidly enumerate challenge machines and discover open attack surfaces.</div></div>
+            <div class="use-case"><span class="use-case-icon">🎓</span><div class="use-case-text"><strong>Security Education</strong> — Learn network recon techniques in sandboxed, safe environments.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="right-col">
+      <div class="sidebar-info-card">
+        <div class="sic-row"><div class="sic-key">Project</div><div class="sic-val">NetPhantom</div></div>
+        <div class="sic-row"><div class="sic-key">ID</div><div class="sic-val">PRJ-003</div></div>
+        <div class="sic-row"><div class="sic-key">Type</div><div class="sic-val blue">Network Recon</div></div>
+        <div class="sic-row"><div class="sic-key">Status</div><div class="sic-val green">● Active</div></div>
+        <div class="sic-row"><div class="sic-key">Platform</div><div class="sic-val">Linux / Kali</div></div>
+        <div class="sic-row"><div class="sic-key">Author</div><div class="sic-val green">Jayanthan S K</div></div>
+        <div class="sic-row"><div class="sic-key">License</div><div class="sic-val">MIT (Ethical Use)</div></div>
+      </div>
+      <div class="request-card">
+        <div class="request-header"><div class="request-header-tag">// request_access.init()</div><h3>Request Access</h3></div>
+        <div class="request-body" id="reqBody">
+          <div class="form-group"><label>Your Name <span class="req">*</span></label><input type="text" id="rname" placeholder="Full name" autocomplete="off"/><div class="field-error" id="rname-err">Name is required.</div></div>
+          <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="remail" placeholder="your@email.com" autocomplete="off"/><div class="field-error" id="remail-err">Valid email required.</div></div>
+          <div class="form-group"><label>Purpose <span class="req">*</span></label>
+            <select id="rpurpose">
+              <option value="">— Select purpose —</option>
+              <option value="CTF Competition">CTF Competition</option>
+              <option value="Home Lab Testing">Home Lab Testing</option>
+              <option value="Authorized Penetration Test">Authorized Penetration Test</option>
+              <option value="Security Research">Security Research</option>
+              <option value="Education / Learning">Education / Learning</option>
+            </select>
+            <div class="field-error" id="rpurpose-err">Please select a purpose.</div>
+          </div>
+          <div class="form-group"><label>Message <span class="req">*</span></label><textarea id="rmessage" placeholder="Describe your use case and target environment..." maxlength="600"></textarea><div class="field-error" id="rmessage-err">Please describe your use case (min 10 chars).</div></div>
+          <button class="btn-request" id="reqBtn" onclick="sendRequest()"><span id="reqBtnText">SEND REQUEST ›</span></button>
+        </div>
+        <div class="success-panel" id="reqSuccess"><div class="success-icon">✓</div><h4>Request Sent!</h4><p>Jayanthan will review your request and get back to you soon.</p><button class="btn-again" onclick="resetRequest()">Send Another</button></div>
+        <div class="request-note">Use NetPhantom only on networks you own or have <span>explicit permission</span> to test.</div>
+      </div>
+    </div>
+  </div>
+  <footer><span>© 2026 <span class="acc">Jayanthan Sailentra Karthikeyan</span>. All rights reserved.</span><span><a href="projects.html" style="color:var(--muted);text-decoration:none;">← Back to Projects</a></span></footer>
+</main>
+<script>
+  const canvas=document.getElementById('matrix-canvas'),ctx=canvas.getContext('2d');
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}resize();window.addEventListener('resize',resize);
+  const chars='アイウエオABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&';const fs=13;let drops=[];
+  function initD(){drops=Array(Math.floor(canvas.width/fs)).fill(1);}initD();window.addEventListener('resize',initD);
+  function draw(){ctx.fillStyle='rgba(5,5,5,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#00ff41';ctx.font=fs+'px Share Tech Mono';for(let i=0;i<drops.length;i++){ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,drops[i]*fs);if(drops[i]*fs>canvas.height&&Math.random()>.975)drops[i]=0;drops[i]++;}}setInterval(draw,50);
+  const sidebar=document.getElementById('sidebar'),overlay=document.getElementById('overlay'),hamBtn=document.getElementById('hamBtn');
+  function toggleSidebar(){const o=sidebar.classList.toggle('open');overlay.classList.toggle('show',o);hamBtn.classList.toggle('open',o);document.body.style.overflow=o?'hidden':'';}
+  function setErr(id,errId,show){document.getElementById(id).classList.toggle('invalid',show);document.getElementById(errId).style.display=show?'block':'none';}
+  function validate(){const name=document.getElementById('rname').value.trim(),email=document.getElementById('remail').value.trim(),purpose=document.getElementById('rpurpose').value,msg=document.getElementById('rmessage').value.trim(),rx=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;let ok=true;setErr('rname','rname-err',!name);if(!name)ok=false;setErr('remail','remail-err',!rx.test(email));if(!rx.test(email))ok=false;setErr('rpurpose','rpurpose-err',!purpose);if(!purpose)ok=false;setErr('rmessage','rmessage-err',msg.length<10);if(msg.length<10)ok=false;return ok;}
+  function sendRequest(){if(!validate())return;const btn=document.getElementById('reqBtn'),btnText=document.getElementById('reqBtnText');btn.disabled=true;btnText.textContent='TRANSMITTING...';const name=document.getElementById('rname').value.trim(),email=document.getElementById('remail').value.trim(),purpose=document.getElementById('rpurpose').value,msg=document.getElementById('rmessage').value.trim();const body=encodeURIComponent('NetPhantom Access Request\n\nName: '+name+'\nEmail: '+email+'\nPurpose: '+purpose+'\n\nDetails:\n'+msg);const sub=encodeURIComponent('[NetPhantom Access Request] '+purpose+' — '+name);window.location.href='mailto:jayanthansailentra8@gmail.com?subject='+sub+'&body='+body;setTimeout(()=>{document.getElementById('reqBody').classList.add('hide');document.getElementById('reqSuccess').classList.add('show');},1200);}
+  function resetRequest(){['rname','remail','rmessage'].forEach(id=>{document.getElementById(id).value='';document.getElementById(id).classList.remove('invalid');});document.getElementById('rpurpose').value='';document.getElementById('rpurpose').classList.remove('invalid');['rname-err','remail-err','rpurpose-err','rmessage-err'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('reqBtn').disabled=false;document.getElementById('reqBtnText').textContent='SEND REQUEST ›';document.getElementById('reqBody').classList.remove('hide');document.getElementById('reqSuccess').classList.remove('show');}
+  ['rname','remail','rmessage'].forEach(id=>{document.getElementById(id).addEventListener('input',()=>document.getElementById(id).classList.remove('invalid'));});
+  document.getElementById('rpurpose').addEventListener('change',()=>{document.getElementById('rpurpose').classList.remove('invalid');document.getElementById('rpurpose-err').style.display='none';});
+</script>
+</body>
+</html>
